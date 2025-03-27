@@ -4,107 +4,48 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Concurso de Videojuegos</title>
-    
-    <!-- Agregar Firebase desde CDN -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-
     <script>
-        // 🔥 Configuración de Firebase con los valores proporcionados
+        // 🔥 Configuración de Firebase (sustituye con tu configuración)
         const firebaseConfig = {
-            apiKey: "AIzaSyC0ewA3bemNB40rS27blt2YCj8V-PXBf60",
-            authDomain: "concursoost.firebaseapp.com",
-            databaseURL: "https://concursoost-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "concursoost",
-            storageBucket: "concursoost.firebasestorage.app",
-            messagingSenderId: "249007512498",
-            appId: "1:249007512498:web:7c5e878049802e77ca62ab"
-        };
+  apiKey: "AIzaSyC0ewA3bemNB40rS27blt2YCj8V-PXBf60",
+  authDomain: "concursoost.firebaseapp.com",
+  databaseURL: "https://concursoost-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "concursoost",
+  storageBucket: "concursoost.firebasestorage.app",
+  messagingSenderId: "249007512498",
+  appId: "1:249007512498:web:7c5e878049802e77ca62ab"
+};
 
-        // Inicializar Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        const jugadoresRef = db.ref("jugadores");
 
-        let nombreJugador = localStorage.getItem('nombreJugador'); // Recupera el nombre si ya se ingresó
+        async function presionarBoton() {
+            const nombre = prompt("Ingresa tu nombre:");
+            if (!nombre) return;
 
-        // Si no se ha ingresado el nombre, pedimos el nombre al principio
-        if (!nombreJugador) {
-            nombreJugador = prompt("Ingresa tu nombre:");
-            if (nombreJugador) {
-                localStorage.setItem('nombreJugador', nombreJugador); // Guardamos el nombre para la próxima vez
+            const ref = db.ref("primerJugador");
+            const snapshot = await ref.once("value");
+
+            if (!snapshot.exists()) {
+                await ref.set({ nombre, timestamp: Date.now() });
+                alert(`¡Felicidades, ${nombre}! Fuiste el primero.`);
+            } else {
+                alert(`Lo siento, ${nombre}. ${snapshot.val().nombre} fue más rápido.`);
             }
         }
 
-        // Escucha los cambios en tiempo real
-        jugadoresRef.on("child_added", function(snapshot) {
-            const jugador = snapshot.val();
-            const jugadorDiv = document.createElement("div");
-            jugadorDiv.textContent = `${jugador.nombre} fue el primero!`;
-            document.getElementById("chat").appendChild(jugadorDiv);
-        });
-
-        // Función para agregar un jugador al nodo
-        function agregarJugador() {
-            jugadoresRef.push({
-                nombre: nombreJugador,
-                timestamp: Date.now()
-            });
-            console.log(`Jugador ${nombreJugador} agregado.`);
-        }
-
-        // Función que se ejecuta cuando alguien presiona el botón
-        function registrarJugador() {
-            agregarJugador();  // Agrega el jugador al nodo
+        function reiniciarJuego() {
+            db.ref("primerJugador").remove();
+            alert("Juego reiniciado. ¡Buena suerte!");
         }
     </script>
-
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
-        }
-        h1 {
-            color: #333;
-        }
-        button {
-            padding: 15px 30px;
-            font-size: 20px;
-            background-color: red;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-        button:hover {
-            background-color: darkred;
-        }
-        #chat {
-            margin-top: 30px;
-            padding: 10px;
-            background-color: #f9f9f9;
-            border: 1px solid #ccc;
-            max-width: 400px;
-            margin-left: auto;
-            margin-right: auto;
-            text-align: left;
-            height: 200px;
-            overflow-y: scroll;
-        }
-    </style>
-
 </head>
 <body>
     <h1>¡Concurso de Videojuegos!</h1>
-
-    <!-- Botón para iniciar el registro -->
-    <button onclick="registrarJugador()">¡Responder!</button>
-
-    <!-- Chat donde se mostrará el jugador que presionó -->
-    <div id="chat">
-        <!-- Aquí aparecerán los jugadores que presionen el botón -->
-    </div>
+    <button onclick="presionarBoton()">¡Responder!</button>
+    <button onclick="reiniciarJuego()">Reiniciar</button>
 </body>
 </html>
+
