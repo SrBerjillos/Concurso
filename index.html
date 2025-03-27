@@ -6,29 +6,26 @@
     <title>Concurso de Videojuegos</title>
 
     <style>
-        /* Estilo para el botón rojo grande */
         .btn-rojo {
-            background-color: red;  
-            color: white;           
-            font-size: 30px;        
-            padding: 20px 40px;     
-            border: none;           
-            border-radius: 10px;    
-            cursor: pointer;       
+            background-color: red;
+            color: white;
+            font-size: 30px;
+            padding: 20px 40px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
             transition: background-color 0.3s ease;
-            margin-top: 20px;       
+            margin-top: 20px;
         }
 
         .btn-rojo:hover {
-            background-color: darkred;  
+            background-color: darkred;
         }
 
-        /* Estilo para el contenedor del nombre */
         .input-nombre {
             margin-bottom: 20px;
         }
 
-        /* Estilo para la sección del chat/lista de jugadores */
         .chat {
             margin-top: 20px;
             max-height: 300px;
@@ -53,35 +50,26 @@
             font-weight: normal;
             color: #333;
         }
-
     </style>
 </head>
 <body>
     <h1>¡Concurso de Videojuegos!</h1>
-    
-    <!-- Pestaña para ingresar el nombre -->
+
     <div class="input-nombre">
         <label for="nombreJugador">Ingresa tu nombre: </label>
         <input type="text" id="nombreJugador" placeholder="Escribe tu nombre aquí">
     </div>
-    
-    <!-- Botón grande y rojo -->
+
     <button onclick="presionarBoton()" class="btn-rojo">¡Responder!</button>
-    
-    <!-- Botón para reiniciar -->
+
     <button onclick="reiniciarJuego()">Reiniciar</button>
 
-    <!-- Sección para mostrar el chat/lista de jugadores -->
-    <div class="chat" id="chat">
-        <!-- Aquí aparecerán los mensajes del chat/lista -->
-    </div>
+    <div class="chat" id="chat"></div>
 
-    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
 
     <script>
-        // Configuración de Firebase (reemplaza estos datos con los tuyos)
         const firebaseConfig = {
             apiKey: "TU_API_KEY",
             authDomain: "TU_PROYECTO.firebaseapp.com",
@@ -92,11 +80,10 @@
             appId: "TU_APP_ID"
         };
 
-        // Inicializa Firebase
         const app = firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // Función cuando un jugador presiona el botón
+        // Cuando se presiona el botón
         function presionarBoton() {
             const nombre = document.getElementById('nombreJugador').value;
 
@@ -105,20 +92,18 @@
                 return;
             }
 
-            // Obtener la referencia de la base de datos para los jugadores
             const jugadoresRef = db.ref('jugadores');
 
-            // Escuchar si ya hay un primer jugador
             jugadoresRef.once('value', (snapshot) => {
                 const jugadores = snapshot.val() || [];
 
                 if (jugadores.length === 0) {
-                    // Si no hay jugadores, el primer jugador presiona
+                    // Si es el primer jugador
                     jugadores.push({ nombre, esPrimerJugador: true });
                     jugadoresRef.set(jugadores);
                     mostrarMensaje(`¡Felicidades, ${nombre}! Fuiste el primero en responder.`, true);
                 } else {
-                    // Si ya hay un primer jugador, agregar al resto
+                    // Si no es el primer jugador
                     jugadores.push({ nombre, esPrimerJugador: false });
                     jugadoresRef.set(jugadores);
                     mostrarMensaje(`${nombre} presionó después de ${jugadores[0].nombre}.`, false);
@@ -126,7 +111,7 @@
             });
         }
 
-        // Función para mostrar los mensajes en el chat/lista de jugadores
+        // Muestra el mensaje en el chat
         function mostrarMensaje(texto, esPrimerJugador) {
             const chat = document.getElementById('chat');
             const mensajeDiv = document.createElement('div');
@@ -140,19 +125,19 @@
 
             mensajeDiv.innerText = texto;
             chat.appendChild(mensajeDiv);
-            chat.scrollTop = chat.scrollHeight;  // Desplazar el chat hacia abajo
+            chat.scrollTop = chat.scrollHeight; // Para que se desplace hasta el último mensaje
         }
 
-        // Función para mostrar los jugadores en el chat en tiempo real
+        // Función para mostrar los jugadores en el chat
         function mostrarChat() {
             const chat = document.getElementById('chat');
-            chat.innerHTML = '';  // Limpiar el chat antes de mostrar los nuevos mensajes
+            chat.innerHTML = ''; // Limpiar el chat
 
             const jugadoresRef = db.ref('jugadores');
             jugadoresRef.on('value', (snapshot) => {
                 const jugadores = snapshot.val() || [];
 
-                jugadores.forEach((jugador, index) => {
+                jugadores.forEach((jugador) => {
                     if (jugador.esPrimerJugador) {
                         mostrarMensaje(`El primer jugador en presionar fue: ${jugador.nombre}`, true);
                     } else {
@@ -165,11 +150,11 @@
         // Función para reiniciar el juego
         function reiniciarJuego() {
             db.ref('jugadores').remove();
-            document.getElementById('chat').innerHTML = '';
+            document.getElementById('chat').innerHTML = ''; // Limpiar el chat
             alert("Juego reiniciado. ¡Buena suerte!");
         }
 
-        // Mostrar el chat al cargar la página
+        // Llamar a mostrarChat() al cargar la página para que se actualice en tiempo real
         window.onload = mostrarChat;
     </script>
 </body>
