@@ -4,88 +4,70 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Concurso de Videojuegos</title>
-
-    <!-- Agregar Firebase desde CDN -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-
-    <script>
-        // Configuración de Firebase (tu API Key y otros datos)
-        const firebaseConfig = {
-  apiKey: "AIzaSyDCat8Sl40GGAnF1s32o57i74y4KkNaFRw",
-  authDomain: "conc-99483.firebaseapp.com",
-  databaseURL: "https://conc-99483-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "conc-99483",
-  storageBucket: "conc-99483.firebasestorage.app",
-  messagingSenderId: "29778637385",
-  appId: "1:29778637385:web:54d8fa77cc2586acf18598"
-};
-
-        // Inicializar Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        const jugadoresRef = db.ref("jugadores");
-
-        console.log("Firebase inicializado correctamente"); // Esto es para verificar que Firebase se ha cargado
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background-color: #222; color: white; }
+        .red-button { background-color: red; color: white; font-size: 24px; padding: 20px; border: none; border-radius: 10px; cursor: pointer; width: 200px; }
+        #log { max-width: 400px; margin: auto; background: black; padding: 10px; border-radius: 10px; text-align: left; height: 200px; overflow-y: auto; }
+        input { font-size: 18px; padding: 10px; margin: 10px; }
+        .chat-message { padding: 5px; border-bottom: 1px solid gray; }
+    </style>
 </head>
 <body>
+
     <h1>¡Concurso de Videojuegos!</h1>
+    
+    <input type="text" id="nombreUsuario" placeholder="Ingresa tu nombre" />
+    <button class="red-button" onclick="presionarBoton()">¡PULSAR!</button>
 
-    <!-- Pestaña para ingresar el nombre -->
-    <div>
-        <label for="nombreJugador">Ingresa tu nombre:</label>
-        <input type="text" id="nombreJugador" placeholder="Tu nombre aquí">
-        <button onclick="registrarJugador()">Registrarme</button>
-    </div>
-
-    <!-- Botón para responder -->
-    <button id="btnResponder" style="background-color: red; color: white;" onclick="responder()">¡Responder!</button>
-
-    <h2>Jugadores registrados:</h2>
-    <ul id="listaJugadores"></ul>
+    <h2>Registro en tiempo real</h2>
+    <div id="log"></div>
 
     <script>
-        let nombreJugador = "";
+        // Configurar Supabase
+        const SUPABASE_URL = "https://psfmsgrajahhqosxrxnr.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBzZm1zZ3JhamFoaHFvc3hyeG5yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMwODA5NDgsImV4cCI6MjA1ODY1Njk0OH0.6AehfwP9ZgEJBFneWn8wDryu-1AuttkISPC8duLsQVE";
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Función para registrar el nombre del jugador
-        function registrarJugador() {
-            nombreJugador = document.getElementById("nombreJugador").value;
-            if (nombreJugador !== "") {
-                alert(`¡Hola, ${nombreJugador}! Ahora puedes empezar a jugar.`);
-                document.getElementById("nombreJugador").disabled = true;
-                document.getElementById("btnResponder").disabled = false;
-            } else {
-                alert("Por favor, ingresa un nombre.");
-            }
-        }
-
-        // Función para registrar quién presionó el botón
-        function responder() {
-            if (nombreJugador === "") {
-                alert("Primero ingresa tu nombre.");
+        async function presionarBoton() {
+            const nombreUsuario = document.getElementById("nombreUsuario").value.trim();
+            if (!nombreUsuario) {
+                alert("Debes ingresar un nombre.");
                 return;
             }
 
-            const nuevoJugadorRef = jugadoresRef.push();
-            nuevoJugadorRef.set({
-                nombre: nombreJugador,
-                timestamp: Date.now()
-            });
+            // Guardar en Supabase
+            const { error } = await supabase.from("pulsaciones").insert([
+                { nombre: nombreUsuario, timestamp: Date.now() }
+            ]);
 
-            // Actualizar la lista de jugadores en tiempo real
-            jugadoresRef.orderByChild("timestamp").on("value", (snapshot) => {
-                const lista = document.getElementById("listaJugadores");
-                lista.innerHTML = ""; // Limpiar la lista de jugadores
-
-                snapshot.forEach((childSnapshot) => {
-                    const jugador = childSnapshot.val();
-                    const li = document.createElement("li");
-                    li.textContent = `${jugador.nombre} - ${new Date(jugador.timestamp).toLocaleTimeString()}`;
-                    lista.appendChild(li);
-                });
-            });
+            if (error) {
+                alert("Error al registrar pulsación.");
+                console.error(error);
+            }
         }
+
+        // Cargar el registro en tiempo real
+        async function cargarLog() {
+            const { data, error } = await supabase.from("pulsaciones").select("*").order("timestamp");
+
+            if (!error) {
+                let registroHTML = "";
+                data.forEach(entry => {
+                    const tiempo = new Date(entry.timestamp).toLocaleTimeString();
+                    registroHTML += `<div class="chat-message"><b>${entry.nombre}</b> pulsó a las ${tiempo}</div>`;
+                });
+                document.getElementById("log").innerHTML = registroHTML;
+            }
+        }
+
+        // Actualizar en tiempo real cuando alguien pulsa
+        supabase.channel("pulsaciones")
+            .on("postgres_changes", { event: "INSERT", schema: "public", table: "pulsaciones" }, cargarLog)
+            .subscribe();
+
+        cargarLog();
     </script>
+
 </body>
 </html>
