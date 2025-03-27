@@ -4,24 +4,52 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Concurso de Videojuegos</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; background-color: #222; color: white; }
-        .red-button { background-color: red; color: white; font-size: 24px; padding: 20px; border: none; border-radius: 10px; cursor: pointer; width: 200px; }
-        #log { max-width: 400px; margin: auto; background: black; padding: 10px; border-radius: 10px; text-align: left; height: 200px; overflow-y: auto; }
-        input { font-size: 18px; padding: 10px; margin: 10px; }
-        .chat-message { padding: 5px; border-bottom: 1px solid gray; }
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        .boton-rojo {
+            background-color: red;
+            color: white;
+            font-size: 24px;
+            padding: 20px 40px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 20px;
+        }
+        .boton-rojo:disabled {
+            background-color: gray;
+            cursor: not-allowed;
+        }
+        .log {
+            width: 80%;
+            max-width: 600px;
+            margin: auto;
+            text-align: left;
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            background: #f9f9f9;
+        }
+        .chat-message {
+            border-bottom: 1px solid #ddd;
+            padding: 5px;
+        }
     </style>
 </head>
 <body>
-
     <h1>¡Concurso de Videojuegos!</h1>
     
-    <input type="text" id="nombreUsuario" placeholder="Ingresa tu nombre" />
-    <button class="red-button" onclick="presionarBoton()">¡PULSAR!</button>
+    <input type="text" id="nombreUsuario" placeholder="Ingresa tu nombre">
+    <button class="boton-rojo" onclick="presionarBoton()">¡Pulsar!</button>
+    <button onclick="reiniciarJuego()">Reiniciar</button>
 
-    <h2>Registro en tiempo real</h2>
-    <div id="log"></div>
+    <h2>Registro de pulsaciones</h2>
+    <div id="log" class="log"></div>
 
     <script>
         // Configurar Supabase
@@ -61,13 +89,24 @@
             }
         }
 
-        // Actualizar en tiempo real cuando alguien pulsa
-        supabase.channel("pulsaciones")
-            .on("postgres_changes", { event: "INSERT", schema: "public", table: "pulsaciones" }, cargarLog)
+        // 🔴 Escuchar cambios en tiempo real
+        supabase
+            .channel("pulsaciones-canal")
+            .on("postgres_changes", { event: "INSERT", schema: "public", table: "pulsaciones" }, (payload) => {
+                console.log("Nuevo dato recibido:", payload.new);
+                cargarLog(); // Actualiza la lista en vivo
+            })
             .subscribe();
 
+        // Cargar el historial al iniciar
         cargarLog();
-    </script>
 
+        // Función para reiniciar el juego
+        async function reiniciarJuego() {
+            await supabase.from("pulsaciones").delete().neq("id", 0);
+            document.getElementById("log").innerHTML = "";
+            alert("Juego reiniciado.");
+        }
+    </script>
 </body>
 </html>
