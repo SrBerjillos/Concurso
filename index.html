@@ -4,118 +4,100 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Concurso de Videojuegos</title>
-
-    <!-- Agrega Firebase desde CDN -->
+    
+    <!-- Agregar Firebase desde CDN -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
 
     <script>
-        // 🔥 Configuración de Firebase
+        // 🔥 Configuración de Firebase (reemplaza con tu configuración)
         const firebaseConfig = {
-            apiKey: "AIzaSyC0ewA3bemNB40rS27blt2YCj8V-PXBf60",
+            apiKey: "TU_API_KEY",
             authDomain: "concursoost.firebaseapp.com",
             databaseURL: "https://concursoost-default-rtdb.europe-west1.firebasedatabase.app",
             projectId: "concursoost",
-            storageBucket: "concursoost.firebasestorage.app",
+            storageBucket: "concursoost.appspot.com",
             messagingSenderId: "249007512498",
             appId: "1:249007512498:web:7c5e878049802e77ca62ab"
         };
 
         // Inicializar Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const db = firebase.database(app);
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const jugadoresRef = db.ref("jugadores");
 
-        // Función cuando un jugador presiona el botón
-        async function presionarBoton() {
-            const nombre = document.getElementById('nombre').value; // Obtén el nombre desde el input
-            if (!nombre) return; // Si no se ingresa un nombre, no hace nada
+        // Escucha los cambios en tiempo real
+        jugadoresRef.on("child_added", function(snapshot) {
+            const jugador = snapshot.val();
+            const jugadorDiv = document.createElement("div");
+            jugadorDiv.textContent = `${jugador.nombre} fue el primero!`;
+            document.getElementById("chat").appendChild(jugadorDiv);
+        });
 
-            const ref = db.ref("jugadores");
-            const snapshot = await ref.once("value");
+        // Función para agregar un jugador al nodo
+        function agregarJugador(nombre) {
+            jugadoresRef.push({
+                nombre: nombre,
+                timestamp: Date.now()
+            });
+            console.log(`Jugador ${nombre} agregado.`);
+        }
 
-            // Verifica si hay jugadores registrados
-            if (!snapshot.exists()) {
-                // Si no hay jugadores, establece el primero
-                await ref.set([{ nombre, timestamp: Date.now() }]);
-            } else {
-                const jugadores = snapshot.val();
-                jugadores.push({ nombre, timestamp: Date.now() });  // Agrega al jugador a la lista
-                await ref.set(jugadores);  // Actualiza la lista
+        // Función que se ejecuta cuando alguien presiona el botón
+        function registrarJugador() {
+            const nombre = prompt("Ingresa tu nombre:");
+            if (nombre) {
+                agregarJugador(nombre);  // Agrega el jugador al nodo
             }
         }
-
-        // Función para escuchar actualizaciones en tiempo real
-        function escucharJugadores() {
-            const ref = db.ref("jugadores");
-            ref.on("value", (snapshot) => {
-                const jugadores = snapshot.val();
-                const listaJugadores = document.getElementById('jugadores');
-                listaJugadores.innerHTML = "";  // Limpia la lista cada vez que se actualiza
-                
-                // Si no hay jugadores, mostrar un mensaje
-                if (!jugadores || jugadores.length === 0) {
-                    listaJugadores.innerHTML = "<li>No hay jugadores aún</li>";
-                }
-
-                // Crear un elemento para cada jugador en la lista
-                jugadores.forEach(jugador => {
-                    const li = document.createElement("li");
-                    li.textContent = `${jugador.nombre}`;
-                    listaJugadores.appendChild(li);
-                });
-            });
-        }
-
-        // Inicia el escucha cuando cargue la página
-        window.onload = function() {
-            escucharJugadores();
-        };
     </script>
-    
+
     <style>
-        /* Estilo del botón rojo */
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
         button {
-            font-size: 30px;
-            padding: 10px 20px;
+            padding: 15px 30px;
+            font-size: 20px;
             background-color: red;
             color: white;
             border: none;
-            border-radius: 10px;
+            border-radius: 5px;
             cursor: pointer;
+            margin-top: 20px;
         }
         button:hover {
             background-color: darkred;
         }
-        /* Estilo del chat de jugadores */
-        #jugadores {
-            list-style-type: none;
-            padding: 0;
-            margin-top: 20px;
-        }
-        #jugadores li {
-            padding: 5px;
-            font-size: 20px;
-            background-color: #f1f1f1;
-            margin: 5px 0;
-            border-radius: 5px;
+        #chat {
+            margin-top: 30px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: left;
+            height: 200px;
+            overflow-y: scroll;
         }
     </style>
+
 </head>
 <body>
     <h1>¡Concurso de Videojuegos!</h1>
 
-    <!-- Formulario para ingresar el nombre -->
-    <div>
-        <label for="nombre">Nombre: </label>
-        <input type="text" id="nombre" placeholder="Ingresa tu nombre">
+    <!-- Botón para iniciar el registro -->
+    <button onclick="registrarJugador()">¡Responder!</button>
+
+    <!-- Chat donde se mostrará el jugador que presionó -->
+    <div id="chat">
+        <!-- Aquí aparecerán los jugadores que presionen el botón -->
     </div>
-
-    <!-- Botón rojo para responder -->
-    <button onclick="presionarBoton()">¡Responder!</button>
-
-    <h2>Jugadores que han presionado:</h2>
-
-    <!-- Lista de jugadores -->
-    <ul id="jugadores"></ul>
 </body>
 </html>
