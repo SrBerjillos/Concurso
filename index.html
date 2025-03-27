@@ -5,157 +5,117 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Concurso de Videojuegos</title>
 
+    <!-- Agrega Firebase desde CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+
+    <script>
+        // 🔥 Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyC0ewA3bemNB40rS27blt2YCj8V-PXBf60",
+            authDomain: "concursoost.firebaseapp.com",
+            databaseURL: "https://concursoost-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "concursoost",
+            storageBucket: "concursoost.firebasestorage.app",
+            messagingSenderId: "249007512498",
+            appId: "1:249007512498:web:7c5e878049802e77ca62ab"
+        };
+
+        // Inicializar Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.database(app);
+
+        // Función cuando un jugador presiona el botón
+        async function presionarBoton() {
+            const nombre = document.getElementById('nombre').value; // Obtén el nombre desde el input
+            if (!nombre) return; // Si no se ingresa un nombre, no hace nada
+
+            const ref = db.ref("jugadores");
+            const snapshot = await ref.once("value");
+
+            // Verifica si hay jugadores registrados
+            if (!snapshot.exists()) {
+                // Si no hay jugadores, establece el primero
+                await ref.set([{ nombre, timestamp: Date.now() }]);
+            } else {
+                const jugadores = snapshot.val();
+                jugadores.push({ nombre, timestamp: Date.now() });  // Agrega al jugador a la lista
+                await ref.set(jugadores);  // Actualiza la lista
+            }
+        }
+
+        // Función para escuchar actualizaciones en tiempo real
+        function escucharJugadores() {
+            const ref = db.ref("jugadores");
+            ref.on("value", (snapshot) => {
+                const jugadores = snapshot.val();
+                const listaJugadores = document.getElementById('jugadores');
+                listaJugadores.innerHTML = "";  // Limpia la lista cada vez que se actualiza
+                
+                // Si no hay jugadores, mostrar un mensaje
+                if (!jugadores || jugadores.length === 0) {
+                    listaJugadores.innerHTML = "<li>No hay jugadores aún</li>";
+                }
+
+                // Crear un elemento para cada jugador en la lista
+                jugadores.forEach(jugador => {
+                    const li = document.createElement("li");
+                    li.textContent = `${jugador.nombre}`;
+                    listaJugadores.appendChild(li);
+                });
+            });
+        }
+
+        // Inicia el escucha cuando cargue la página
+        window.onload = function() {
+            escucharJugadores();
+        };
+    </script>
+    
     <style>
-        .btn-rojo {
+        /* Estilo del botón rojo */
+        button {
+            font-size: 30px;
+            padding: 10px 20px;
             background-color: red;
             color: white;
-            font-size: 30px;
-            padding: 20px 40px;
             border: none;
             border-radius: 10px;
             cursor: pointer;
-            transition: background-color 0.3s ease;
-            margin-top: 20px;
         }
-
-        .btn-rojo:hover {
+        button:hover {
             background-color: darkred;
         }
-
-        .input-nombre {
-            margin-bottom: 20px;
-        }
-
-        .chat {
+        /* Estilo del chat de jugadores */
+        #jugadores {
+            list-style-type: none;
+            padding: 0;
             margin-top: 20px;
-            max-height: 300px;
-            overflow-y: scroll;
-            border: 1px solid #ccc;
-            padding: 10px;
-            background-color: #f9f9f9;
-            font-family: Arial, sans-serif;
         }
-
-        .mensaje {
+        #jugadores li {
+            padding: 5px;
+            font-size: 20px;
+            background-color: #f1f1f1;
             margin: 5px 0;
-            font-size: 18px;
-        }
-
-        .primer-jugador {
-            font-weight: bold;
-            color: green;
-        }
-
-        .jugador {
-            font-weight: normal;
-            color: #333;
+            border-radius: 5px;
         }
     </style>
 </head>
 <body>
     <h1>¡Concurso de Videojuegos!</h1>
 
-    <div class="input-nombre">
-        <label for="nombreJugador">Ingresa tu nombre: </label>
-        <input type="text" id="nombreJugador" placeholder="Escribe tu nombre aquí">
+    <!-- Formulario para ingresar el nombre -->
+    <div>
+        <label for="nombre">Nombre: </label>
+        <input type="text" id="nombre" placeholder="Ingresa tu nombre">
     </div>
 
-    <button onclick="presionarBoton()" class="btn-rojo">¡Responder!</button>
+    <!-- Botón rojo para responder -->
+    <button onclick="presionarBoton()">¡Responder!</button>
 
-    <button onclick="reiniciarJuego()">Reiniciar</button>
+    <h2>Jugadores que han presionado:</h2>
 
-    <div class="chat" id="chat"></div>
-
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-
-    <script>
-        const firebaseConfig = {
-            apiKey: "TU_API_KEY",
-            authDomain: "TU_PROYECTO.firebaseapp.com",
-            databaseURL: "https://TU_PROYECTO.firebaseio.com",
-            projectId: "TU_PROYECTO",
-            storageBucket: "TU_PROYECTO.appspot.com",
-            messagingSenderId: "TU_MENSAJE_ID",
-            appId: "TU_APP_ID"
-        };
-
-        const app = firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-
-        // Cuando se presiona el botón
-        function presionarBoton() {
-            const nombre = document.getElementById('nombreJugador').value;
-
-            if (!nombre) {
-                alert("Por favor, ingresa tu nombre.");
-                return;
-            }
-
-            const jugadoresRef = db.ref('jugadores');
-
-            jugadoresRef.once('value', (snapshot) => {
-                const jugadores = snapshot.val() || [];
-
-                if (jugadores.length === 0) {
-                    // Si es el primer jugador
-                    jugadores.push({ nombre, esPrimerJugador: true });
-                    jugadoresRef.set(jugadores);
-                    mostrarMensaje(`¡Felicidades, ${nombre}! Fuiste el primero en responder.`, true);
-                } else {
-                    // Si no es el primer jugador
-                    jugadores.push({ nombre, esPrimerJugador: false });
-                    jugadoresRef.set(jugadores);
-                    mostrarMensaje(`${nombre} presionó después de ${jugadores[0].nombre}.`, false);
-                }
-            });
-        }
-
-        // Muestra el mensaje en el chat
-        function mostrarMensaje(texto, esPrimerJugador) {
-            const chat = document.getElementById('chat');
-            const mensajeDiv = document.createElement('div');
-            mensajeDiv.classList.add('mensaje');
-
-            if (esPrimerJugador) {
-                mensajeDiv.classList.add('primer-jugador');
-            } else {
-                mensajeDiv.classList.add('jugador');
-            }
-
-            mensajeDiv.innerText = texto;
-            chat.appendChild(mensajeDiv);
-            chat.scrollTop = chat.scrollHeight; // Para que se desplace hasta el último mensaje
-        }
-
-        // Función para mostrar los jugadores en el chat
-        function mostrarChat() {
-            const chat = document.getElementById('chat');
-            chat.innerHTML = ''; // Limpiar el chat
-
-            const jugadoresRef = db.ref('jugadores');
-            jugadoresRef.on('value', (snapshot) => {
-                const jugadores = snapshot.val() || [];
-
-                jugadores.forEach((jugador) => {
-                    if (jugador.esPrimerJugador) {
-                        mostrarMensaje(`El primer jugador en presionar fue: ${jugador.nombre}`, true);
-                    } else {
-                        mostrarMensaje(`${jugador.nombre} presionó después.`, false);
-                    }
-                });
-            });
-        }
-
-        // Función para reiniciar el juego
-        function reiniciarJuego() {
-            db.ref('jugadores').remove();
-            document.getElementById('chat').innerHTML = ''; // Limpiar el chat
-            alert("Juego reiniciado. ¡Buena suerte!");
-        }
-
-        // Llamar a mostrarChat() al cargar la página para que se actualice en tiempo real
-        window.onload = mostrarChat;
-    </script>
+    <!-- Lista de jugadores -->
+    <ul id="jugadores"></ul>
 </body>
 </html>
