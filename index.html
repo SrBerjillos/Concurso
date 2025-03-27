@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Concurso de Videojuegos</title>
+
+    <style>
+        /* Estilo para el botón rojo grande */
+        .btn-rojo {
+            background-color: red;  /* Color de fondo rojo */
+            color: white;           /* Color del texto blanco */
+            font-size: 30px;        /* Tamaño de fuente grande */
+            padding: 20px 40px;     /* Espaciado dentro del botón */
+            border: none;           /* Sin borde */
+            border-radius: 10px;    /* Bordes redondeados */
+            cursor: pointer;       /* Cambiar el cursor al pasar por encima */
+            transition: background-color 0.3s ease;  /* Animación suave al pasar el ratón */
+            margin-top: 20px;       /* Espacio arriba del botón */
+        }
+
+        /* Estilo para el botón cuando pasa el ratón por encima */
+        .btn-rojo:hover {
+            background-color: darkred;  /* Color más oscuro cuando pasas el ratón */
+        }
+
+        /* Estilo para el contenedor del nombre */
+        .input-nombre {
+            margin-bottom: 20px;
+        }
+
+        /* Estilo para la sección del chat */
+        .chat {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background-color: #f9f9f9;
+            font-family: Arial, sans-serif;
+        }
+
+        .mensaje {
+            margin: 5px 0;
+            font-size: 18px;
+        }
+
+        .primer-jugador {
+            font-weight: bold;
+            color: green;
+        }
+
+        .jugador {
+            font-weight: normal;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>¡Concurso de Videojuegos!</h1>
+    
+    <!-- Pestaña para ingresar el nombre -->
+    <div class="input-nombre">
+        <label for="nombreJugador">Ingresa tu nombre: </label>
+        <input type="text" id="nombreJugador" placeholder="Escribe tu nombre aquí">
+    </div>
+    
+    <!-- Botón grande y rojo -->
+    <button onclick="presionarBoton()" class="btn-rojo">¡Responder!</button>
+    
+    <!-- Botón para reiniciar -->
+    <button onclick="reiniciarJuego()">Reiniciar</button>
+
+    <!-- Sección para mostrar el chat -->
+    <div class="chat" id="chat">
+        <!-- Aquí aparecerán los mensajes del chat -->
+    </div>
+
+    <script>
+        // Función cuando un jugador presiona el botón
+        function presionarBoton() {
+            const nombre = document.getElementById('nombreJugador').value;
+
+            if (!nombre) {
+                alert("Por favor, ingresa tu nombre.");
+                return;
+            }
+
+            // Obtener la lista de jugadores y el primer jugador
+            let jugadores = JSON.parse(localStorage.getItem('jugadores')) || [];
+            const primerJugador = localStorage.getItem('primerJugador');
+
+            if (!primerJugador) {
+                // Si no hay primer jugador, lo registramos
+                localStorage.setItem('primerJugador', nombre);
+                jugadores.push({ nombre, esPrimerJugador: true });
+                localStorage.setItem('jugadores', JSON.stringify(jugadores));
+                mostrarMensaje(`¡Felicidades, ${nombre}! Fuiste el primero en responder.`, true);
+            } else {
+                // Si ya hay un primer jugador, lo agregamos a la lista
+                jugadores.push({ nombre, esPrimerJugador: false });
+                localStorage.setItem('jugadores', JSON.stringify(jugadores));
+                mostrarMensaje(`${nombre} presionó después de ${primerJugador}.`, false);
+            }
+
+            // Actualizar el chat
+            mostrarChat();
+        }
+
+        // Función para mostrar los mensajes en el chat
+        function mostrarMensaje(texto, esPrimerJugador) {
+            const chat = document.getElementById('chat');
+            const mensajeDiv = document.createElement('div');
+            mensajeDiv.classList.add('mensaje');
+
+            if (esPrimerJugador) {
+                mensajeDiv.classList.add('primer-jugador');
+            } else {
+                mensajeDiv.classList.add('jugador');
+            }
+
+            mensajeDiv.innerText = texto;
+            chat.appendChild(mensajeDiv);
+            chat.scrollTop = chat.scrollHeight;  // Desplazar el chat hacia abajo
+        }
+
+        // Función para mostrar los jugadores en el chat
+        function mostrarChat() {
+            const chat = document.getElementById('chat');
+            chat.innerHTML = '';  // Limpiar el chat antes de mostrar los nuevos mensajes
+
+            let jugadores = JSON.parse(localStorage.getItem('jugadores')) || [];
+            jugadores.forEach(jugador => {
+                if (jugador.esPrimerJugador) {
+                    mostrarMensaje(`El primer jugador en presionar fue: ${jugador.nombre}`, true);
+                } else {
+                    mostrarMensaje(`${jugador.nombre} presionó después.`, false);
+                }
+            });
+        }
+
+        // Función para reiniciar el juego
+        function reiniciarJuego() {
+            localStorage.removeItem('primerJugador');
+            localStorage.removeItem('jugadores');
+            document.getElementById('chat').innerHTML = '';
+            alert("Juego reiniciado. ¡Buena suerte!");
+        }
+
+        // Mostrar el chat al cargar la página
+        window.onload = mostrarChat;
+    </script>
+</body>
+</html>
