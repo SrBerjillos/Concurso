@@ -10,22 +10,31 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
 
     <script>
-        // 🔥 Configuración de Firebase (reemplaza con tu configuración)
+        // 🔥 Configuración de Firebase con los valores proporcionados
         const firebaseConfig = {
-  apiKey: "AIzaSyC0ewA3bemNB40rS27blt2YCj8V-PXBf60",
-  authDomain: "concursoost.firebaseapp.com",
-  databaseURL: "https://concursoost-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "concursoost",
-  storageBucket: "concursoost.firebasestorage.app",
-  messagingSenderId: "249007512498",
-  appId: "1:249007512498:web:7c5e878049802e77ca62ab"
-};
+            apiKey: "AIzaSyC0ewA3bemNB40rS27blt2YCj8V-PXBf60",
+            authDomain: "concursoost.firebaseapp.com",
+            databaseURL: "https://concursoost-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "concursoost",
+            storageBucket: "concursoost.firebasestorage.app",
+            messagingSenderId: "249007512498",
+            appId: "1:249007512498:web:7c5e878049802e77ca62ab"
         };
 
         // Inicializar Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         const jugadoresRef = db.ref("jugadores");
+
+        let nombreJugador = localStorage.getItem('nombreJugador'); // Recupera el nombre si ya se ingresó
+
+        // Si no se ha ingresado el nombre, pedimos el nombre al principio
+        if (!nombreJugador) {
+            nombreJugador = prompt("Ingresa tu nombre:");
+            if (nombreJugador) {
+                localStorage.setItem('nombreJugador', nombreJugador); // Guardamos el nombre para la próxima vez
+            }
+        }
 
         // Escucha los cambios en tiempo real
         jugadoresRef.on("child_added", function(snapshot) {
@@ -36,20 +45,17 @@
         });
 
         // Función para agregar un jugador al nodo
-        function agregarJugador(nombre) {
+        function agregarJugador() {
             jugadoresRef.push({
-                nombre: nombre,
+                nombre: nombreJugador,
                 timestamp: Date.now()
             });
-            console.log(`Jugador ${nombre} agregado.`);
+            console.log(`Jugador ${nombreJugador} agregado.`);
         }
 
         // Función que se ejecuta cuando alguien presiona el botón
         function registrarJugador() {
-            const nombre = prompt("Ingresa tu nombre:");
-            if (nombre) {
-                agregarJugador(nombre);  // Agrega el jugador al nodo
-            }
+            agregarJugador();  // Agrega el jugador al nodo
         }
     </script>
 
