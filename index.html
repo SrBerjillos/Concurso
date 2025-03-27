@@ -4,48 +4,88 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Concurso de Videojuegos</title>
+
+    <!-- Agregar Firebase desde CDN -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-    <script>
-        // 🔥 Configuración de Firebase (sustituye con tu configuración)
-        const firebaseConfig = {
-  apiKey: "AIzaSyC0ewA3bemNB40rS27blt2YCj8V-PXBf60",
-  authDomain: "concursoost.firebaseapp.com",
-  databaseURL: "https://concursoost-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "concursoost",
-  storageBucket: "concursoost.firebasestorage.app",
-  messagingSenderId: "249007512498",
-  appId: "1:249007512498:web:7c5e878049802e77ca62ab"
-};
 
+    <script>
+        // Configuración de Firebase (tu API Key y otros datos)
+        const firebaseConfig = {
+            apiKey: "AIzaSyC0ewA3bemNB40rS27blt2YCj8V-PXBf60",
+            authDomain: "concursoost.firebaseapp.com",
+            databaseURL: "https://concursoost-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "concursoost",
+            storageBucket: "concursoost.firebasestorage.app",
+            messagingSenderId: "249007512498",
+            appId: "1:249007512498:web:7c5e878049802e77ca62ab"
+        };
+
+        // Inicializar Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+        const jugadoresRef = db.ref("jugadores");
 
-        async function presionarBoton() {
-            const nombre = prompt("Ingresa tu nombre:");
-            if (!nombre) return;
-
-            const ref = db.ref("primerJugador");
-            const snapshot = await ref.once("value");
-
-            if (!snapshot.exists()) {
-                await ref.set({ nombre, timestamp: Date.now() });
-                alert(`¡Felicidades, ${nombre}! Fuiste el primero.`);
-            } else {
-                alert(`Lo siento, ${nombre}. ${snapshot.val().nombre} fue más rápido.`);
-            }
-        }
-
-        function reiniciarJuego() {
-            db.ref("primerJugador").remove();
-            alert("Juego reiniciado. ¡Buena suerte!");
-        }
+        console.log("Firebase inicializado correctamente"); // Esto es para verificar que Firebase se ha cargado
     </script>
 </head>
 <body>
     <h1>¡Concurso de Videojuegos!</h1>
-    <button onclick="presionarBoton()">¡Responder!</button>
-    <button onclick="reiniciarJuego()">Reiniciar</button>
+
+    <!-- Pestaña para ingresar el nombre -->
+    <div>
+        <label for="nombreJugador">Ingresa tu nombre:</label>
+        <input type="text" id="nombreJugador" placeholder="Tu nombre aquí">
+        <button onclick="registrarJugador()">Registrarme</button>
+    </div>
+
+    <!-- Botón para responder -->
+    <button id="btnResponder" style="background-color: red; color: white;" onclick="responder()">¡Responder!</button>
+
+    <h2>Jugadores registrados:</h2>
+    <ul id="listaJugadores"></ul>
+
+    <script>
+        let nombreJugador = "";
+
+        // Función para registrar el nombre del jugador
+        function registrarJugador() {
+            nombreJugador = document.getElementById("nombreJugador").value;
+            if (nombreJugador !== "") {
+                alert(`¡Hola, ${nombreJugador}! Ahora puedes empezar a jugar.`);
+                document.getElementById("nombreJugador").disabled = true;
+                document.getElementById("btnResponder").disabled = false;
+            } else {
+                alert("Por favor, ingresa un nombre.");
+            }
+        }
+
+        // Función para registrar quién presionó el botón
+        function responder() {
+            if (nombreJugador === "") {
+                alert("Primero ingresa tu nombre.");
+                return;
+            }
+
+            const nuevoJugadorRef = jugadoresRef.push();
+            nuevoJugadorRef.set({
+                nombre: nombreJugador,
+                timestamp: Date.now()
+            });
+
+            // Actualizar la lista de jugadores en tiempo real
+            jugadoresRef.orderByChild("timestamp").on("value", (snapshot) => {
+                const lista = document.getElementById("listaJugadores");
+                lista.innerHTML = ""; // Limpiar la lista de jugadores
+
+                snapshot.forEach((childSnapshot) => {
+                    const jugador = childSnapshot.val();
+                    const li = document.createElement("li");
+                    li.textContent = `${jugador.nombre} - ${new Date(jugador.timestamp).toLocaleTimeString()}`;
+                    lista.appendChild(li);
+                });
+            });
+        }
+    </script>
 </body>
 </html>
-
